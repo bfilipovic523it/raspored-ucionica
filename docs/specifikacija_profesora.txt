@@ -1,0 +1,91 @@
+Funkcionalnosti:
+
+Laravel aplikacija, sa dve vrste korisnika - admin i nastavnik
+
+Nastavnik može da vidi zauzeće učionica, i da unese rezervaciju termina (nepotvrđen unos u tabelu - termins)
+
+Admin može da vidi nepotvrđene termine, i prihvati/odbije.
+ima CRUD - za učionice, korisnike, kalendar školske godine (csv fajl nekakav)
+ima bulk insert - uvoz csv fajla sa raspored.raf.edu.rs u kome su navedeni svi termini koji se zauzimaju
+u dva moda rada - one-time termini (kolokvijumi-ispiti, zakazuju se na određeni datum)
+- ponavljajući termini (raspored časova, zakazuju se za ceo semestar, po kalendaru rada, 13 termina po predmetu)
+koji se biraju na ekranu gde se radi ta akcija (imaš file upload polje za csv, i nekoliko polja za podešavanje - select ili radio button, da se izabere da li je one-time ili recurring, i koji je tip csv fajla - da li ima datume ili dane)
+kada se radi bulk insert, za termine se upisuje (u kolonu bulk-id) identifikator tog inserta tako da se u bazi vide svi termini koji su uneti po tom bulk-insertu na osnovu tog identifikatora. Identifikator bulk_uid je timestamp-akcije.user_id koji je izvršio akciju
+ima CRUD za termine
+- može da briše termin. ako je termin unet sa bulk-insert-recurring onda da može da briše sve instance-pojave (termin za tu učionicu, to vreme, sa tim nazivom bulk-insert-recurring paketa)
+
+
+Tabele:
+users (laravelova) sa dodatnom kolonom za vrstu korisnika (admin, nastavnik)
+ucionicas - id, naziv, opis
+termins - id, ucionica_id, user_id, created, updated, created_by, updated_by, naziv, opis, datum, vreme_pocetka, vreme_kraja, bulk_uid, status
+status=SET(potvrdjen, odbijen, ceka)
+
+Modeli: User, Ucionica, Termin
+
+migracije - create_ucionicas, create_termins
+
+Seederi - users (po spisku nastavnika, ime-mejl), ucionicas (po spisku- naziv)
+termine - samo za test, dok radiš, posle sklanjaš
+
+Kontroleri
+Termin, Ucionica, User resource controllers
+
+View
+admin/
+ucionica/
+crud blejdovi
+user/
+crud blejdovi
+termin/ - običan klot crud, spisak svih termina, sa paginacijom, da mogu da direktno brljam po redovima u tabeli i po potrebi ih menjam, low level, bez javascript kalendara
+crud blejdovi
+
+raspored/
+kalendar.blade.php
+i to verovatno sve sto ti treba za korisnika, jer ce https://calendarjs.com/docs/calendar/international da sadrzi u sebi sve potrebne prikaze, pa ovde radis instanciranje i postavljanje potrebnih kontrola za izbor prikaza, i napises nesto ajax fetch() poziva koji će da učitavaju i osvežavaju podatke koje kalendar prikazuje
+
+Routes
+auth middleware, admin vrsta korisnika
+admin.
+ucionica.
+user.
+termin.
+za crud rute, to su resource routes, koje će blueprint da izgeneriše po resource kontrolerima
+
+
+auth middleware, nastavnik i admin vrsta korisnika
+raspored.kalendar
+/ home ruta
+
+login auth itd.
+nema registracije
+oauth umesto login   https://laravel.com/framework/docs/passport
+
+blueprint iskoristi da generišeš potrebne elemente aplikacije
+
+za blejdove napravi layout, koristi klot bootstrap5, stavi navbar koji ima desno logout za korisnika, a levo je naziv "Raspored učionica" link ka home ruti
+admin će da ovde ima linkove za crud, Učionica, Korisnici, Termini
+
+neka bude container-fluid prikaz, od ivice do ivice, jer kalendar treba da bude prostran
+
+
+Kalendar prikaz:
+- po učionicama svim. kolone su učionice, redovi su sati od 9 do 21h
+- za izabrani dan (pon-ned)
+- a koji je to konkretno datum se bira u kalendaru pored ili tako nešto.
+- kada kliknem u kalendar na neki termin, otvara se popup za rezervisanje - unosi se datum, vreme početka, trajanje, vreme kraja (vidi kako ćeš da povežeš ta dva, šta ti je zgodnije), naziv termina, opcioni opis termina
+
+naziv: PWA
+opis: Nadoknada termina vežbi od 14.10. za grupe 2s1, 2s2
+
+na osnovu ulogovanog usera u sesiji znaš ko je user_id koji zakazuje termin.
+status je default=ceka
+
+u kalendaru se vide svi potvrdjeni-za nastavnike
+za admine vide se baš svi, ali različitom bojom označi odbijene i na čekanju. odbijeni sivo, na čekanju žuto
+admin može da klikne i promeni status.
+
+Prvo - blueprint, google auth, calendarjs isprobaj.
+Drugo - napravi cistu aplikaciju, sa potrebnim elementima, u seeder stavi dva usera, 3 termina, radi na prikazu kalendara
+
+Trece - kada prikaz zauzeca ucionica bude definisan, onda pravis ostalo - crud i bulk-insert iz csv

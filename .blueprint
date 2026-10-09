@@ -1,0 +1,10 @@
+created:
+    - database/factories/UcionicaFactory.php
+    - database/factories/TerminFactory.php
+    - database/migrations/2026_10_09_175927_create_ucionicas_table.php
+    - database/migrations/2026_10_09_175928_create_termins_table.php
+    - app/Models/Ucionica.php
+    - app/Models/Termin.php
+models:
+    Ucionica: { naziv: 'string unique', opis: 'text nullable', relationships: { hasMany: Termin } }
+    Termin: { ucionica_id: 'id foreign', user_id: 'id foreign', created_by: 'id foreign:users.id nullable', updated_by: 'id foreign:users.id nullable', naziv: string, opis: 'text nullable', datum: date, vreme_pocetka: time, vreme_kraja: time, bulk_uid: 'string nullable', status: 'enum:potvrdjen,odbijen,ceka default:ceka' }

@@ -1,0 +1,19 @@
+models:
+  Ucionica:
+    naziv: string unique
+    opis: text nullable
+    relationships:
+      hasMany: Termin
+
+  Termin:
+    ucionica_id: id foreign
+    user_id: id foreign
+    created_by: id foreign:users.id nullable
+    updated_by: id foreign:users.id nullable
+    naziv: string
+    opis: text nullable
+    datum: date
+    vreme_pocetka: time
+    vreme_kraja: time
+    bulk_uid: string nullable
+    status: enum:potvrdjen,odbijen,ceka default:ceka

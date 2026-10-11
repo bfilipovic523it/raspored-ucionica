@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Ucionica;
 use App\Models\Termin;
+use Illuminate\Support\Facades\DB;
 
 
 class RasporedController extends Controller
@@ -15,9 +16,9 @@ class RasporedController extends Controller
 
         $vremena = [];
         for ($minut = 9 * 60; $minut <= 21 * 60; $minut += 15) {
-            $sat = intdiv($minut, 60);         // celobrojno deljenje: 555 / 60 = 9
-            $ostatak = $minut % 60;            // ostatak deljenja:   555 % 60 = 15
-            $vremena[] = sprintf('%02d:%02d', $sat, $ostatak);   // "09:15"
+            $sat = intdiv($minut, 60);         
+            $ostatak = $minut % 60;           
+            $vremena[] = sprintf('%02d:%02d', $sat, $ostatak);   
         }
 
         return view('raspored.kalendar', [
@@ -28,21 +29,14 @@ class RasporedController extends Controller
 
     public function termini(Request $request)
     {
-        // Provera ulaza: datum mora postojati i biti u formatu Y-m-d.
-        // Ako nije, Laravel sam vraća grešku i dalje se ne ide.
         $podaci = $request->validate([
             'datum' => ['required', 'date_format:Y-m-d'],
         ]);
 
-        // Termini za taj datum, poređani po vremenu početka.
-        // Za sada vraćamo SVE termine. Pravilo "nastavnik vidi samo potvrđene
-        // i svoje na čekanju" dodajemo kad bude prijave (dok ne znamo ko je ulogovan).
         $termini = Termin::where('datum', $podaci['datum'])
             ->orderBy('vreme_pocetka')
             ->get();
 
-        // Šaljemo samo polja potrebna kalendaru. Vreme iz baze stiže kao
-        // "09:15:00", pa uzimamo prvih 5 znakova: "09:15".
         $rezultat = $termini->map(function ($termin) {
             return [
                 'id' => $termin->id,
@@ -56,5 +50,45 @@ class RasporedController extends Controller
         });
 
         return response()->json($rezultat);
+    }
+
+    public function sacuvaj(Request $request)
+    {
+        // 1) Provera podataka
+        $podaci = $request->validate([
+            'ucionica_id'   => ['required', 'exists:ucionicas,id'],
+            'datum'         => ['required', 'date_format:Y-m-d'],
+            'vreme_pocetka' => ['required', 'date_format:H:i', 'after_or_equal:09:00'],
+            'vreme_kraja'   => ['required', 'date_format:H:i', 'after:vreme_pocetka', 'before_or_equal:21:00'],
+            'naziv'         => ['required', 'string', 'max:255'],
+            'opis'          => ['nullable', 'string'],
+        ]);
+
+        // 2) Provera preklapanja i upis, u jednoj transakciji.
+        return DB::transaction(function () use ($podaci, $request) {
+            Ucionica::lockForUpdate()->find($podaci['ucionica_id']);
+
+            $preklapaSe = Termin::where('ucionica_id', $podaci['ucionica_id'])
+                ->where('datum', $podaci['datum'])
+                ->whereIn('status', ['ceka', 'potvrdjen'])      
+                ->where('vreme_pocetka', '<', $podaci['vreme_kraja']) 
+                ->where('vreme_kraja', '>', $podaci['vreme_pocetka'])  
+                ->exists();
+
+            if ($preklapaSe) {
+                return response()->json([
+                    'message' => 'U ovoj učionici već postoji termin u to vreme (potvrđen ili na čekanju).',
+                ], 422);
+            }
+
+            $termin = Termin::create([
+                ...$podaci,                             
+                'user_id' => $request->user()->id,     
+                'created_by' => $request->user()->id,
+                'status' => 'ceka',                      
+            ]);
+
+            return response()->json($termin, 201);
+        });
     }
 }

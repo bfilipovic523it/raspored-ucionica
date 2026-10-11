@@ -21,6 +21,10 @@
         .raspored { display: flex; gap: 16px; align-items: flex-start; }
 
         .raspored .omotac { flex: 1; min-width: 0; }
+
+        .mreza td.potvrdjen { background: #cfe2ff; }               
+        .mreza td.ceka      { background: #fff3b0; }      
+        .mreza td.odbijen   { background: #e0e0e0; color: #666; }
     </style>
 </head>
 <body>
@@ -48,7 +52,7 @@
                         <tr class="{{ str_ends_with($vreme, ':00') ? 'pun-sat' : '' }}">
                             <th>{{ $vreme }}</th>
                             @foreach ($ucionice as $ucionica)
-                                <td class="polje"></td>
+                                <td class="polje" data-ucionica="{{ $ucionica->id }}" data-vreme="{{ $vreme }}"></td>
                             @endforeach
                         </tr>
                     @endforeach
@@ -81,6 +85,58 @@
                 dani[danUNedelji] + ', ' + dan + '.' + mesec + '.' + godina + '.';
         }
 
+        // "09:15" -> 555 (minuta od ponoći). Lakše se računa sa brojevima.
+        function uMinute(vreme) {
+            const [sat, minut] = vreme.split(':');
+            return Number(sat) * 60 + Number(minut);
+        }
+
+        // 555 -> "09:15" (obrnuto od uMinute).
+        function uVreme(minuti) {
+            const sat = String(Math.floor(minuti / 60)).padStart(2, '0');
+            const minut = String(minuti % 60).padStart(2, '0');
+            return sat + ':' + minut;
+        }
+
+        // Traži od servera termine za datum i crta ih u mreži.
+        async function ucitajTermine(datum) {
+            // 1) Očisti mrežu: skini boje i tekst sa svih polja.
+            document.querySelectorAll('.mreza td.polje').forEach(function (polje) {
+                polje.className = 'polje';
+                polje.textContent = '';
+                polje.title = '';
+            });
+
+            // 2) Pitaj server. Adresu pravi Laravel po imenu rute.
+            const odgovor = await fetch('{{ route('raspored.termini') }}?datum=' + datum);
+            if (!odgovor.ok) {
+                console.error('Greška pri učitavanju termina:', odgovor.status);
+                return;
+            }
+            const termini = await odgovor.json();
+
+            // 3) Za svaki termin oboji polja od početka do kraja (kraj ne ulazi:
+            //    termin 09:15–11:00 zauzima polja 09:15, 09:30, ..., 10:45).
+            termini.forEach(function (termin) {
+                const pocetak = uMinute(termin.vreme_pocetka);
+                const kraj = uMinute(termin.vreme_kraja);
+
+                for (let m = pocetak; m < kraj; m += 15) {
+                    const polje = document.querySelector(
+                        '.mreza td[data-ucionica="' + termin.ucionica_id + '"][data-vreme="' + uVreme(m) + '"]'
+                    );
+                    if (!polje) continue;   // npr. vreme van mreže: preskoči
+
+                    polje.classList.add(termin.status);   // boja po statusu
+                    // Tekst kad se mišem pređe preko polja.
+                    polje.title = termin.naziv + ' (' + termin.vreme_pocetka + '–' + termin.vreme_kraja + ')';
+                    if (m === pocetak) {
+                        polje.textContent = termin.naziv;  // naziv samo u prvom polju
+                    }
+                }
+            });
+        }
+
         // Današnji datum u formatu Y-M-D, po lokalnom vremenu računara.
         const sada = new Date();
         const danas = sada.getFullYear() + '-'
@@ -92,14 +148,15 @@
             startingDay: 1,
             value: danas,
             onchange: function (self, vrednost) {
-                // Izabrani datum: za sada ga samo prikazujemo.
-                // U sledećem koraku ovde učitavamo termine za taj dan.
+                // Izabrani datum: prikaži ga i učitaj termine za taj dan.
                 prikaziDatum(vrednost.slice(0, 10));
+                ucitajTermine(vrednost.slice(0, 10));
             },
         });
 
         // Na početku je izabran današnji dan.
         prikaziDatum(danas);
+        ucitajTermine(danas);
     </script>
 
 </body>

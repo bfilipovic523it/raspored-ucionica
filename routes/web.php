@@ -16,6 +16,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/raspored', [RasporedController::class, 'kalendar'])->name('raspored.kalendar');
     Route::get('/raspored/termini', [RasporedController::class, 'termini'])->name('raspored.termini');
     Route::post('/raspored/termini', [RasporedController::class, 'sacuvaj'])->name('raspored.sacuvaj');
+    Route::patch('/raspored/termini/{termin}/status', [RasporedController::class, 'promeniStatus'])->name('raspored.status');
 });
 
 Route::get('/login', [PrijavaController::class, 'forma'])->name('login');

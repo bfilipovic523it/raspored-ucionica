@@ -33,9 +33,21 @@ class RasporedController extends Controller
             'datum' => ['required', 'date_format:Y-m-d'],
         ]);
 
-        $termini = Termin::where('datum', $podaci['datum'])
-            ->orderBy('vreme_pocetka')
-            ->get();
+        $korisnik = $request->user();
+
+        $upit = Termin::where('datum', $podaci['datum']);
+
+        if (! $korisnik->jeAdmin()) {
+            $upit->where(function ($q) use ($korisnik) {
+                $q->where('status', 'potvrdjen')
+                ->orWhere(function ($q) use ($korisnik) {
+                    $q->where('status', 'ceka')
+                        ->where('user_id', $korisnik->id);
+                });
+            });
+        }
+
+        $termini = $upit->orderBy('vreme_pocetka')->get();
 
         $rezultat = $termini->map(function ($termin) {
             return [
@@ -91,4 +103,44 @@ class RasporedController extends Controller
             return response()->json($termin, 201);
         });
     }
+
+    /**
+     * Admin menja status termina
+    */
+    public function promeniStatus(Request $request, Termin $termin)
+    {
+        abort_unless($request->user()->jeAdmin(), 403);
+
+        $podaci = $request->validate([
+            'status' => ['required', 'in:potvrdjen,odbijen,ceka'],
+        ]);
+
+        return DB::transaction(function () use ($podaci, $termin, $request) {
+            if ($podaci['status'] !== 'odbijen') {
+                Ucionica::lockForUpdate()->find($termin->ucionica_id);
+
+                $preklapaSe = Termin::where('ucionica_id', $termin->ucionica_id)
+                    ->where('datum', $termin->datum)
+                    ->where('id', '!=', $termin->id)
+                    ->whereIn('status', ['ceka', 'potvrdjen'])
+                    ->where('vreme_pocetka', '<', $termin->vreme_kraja)
+                    ->where('vreme_kraja', '>', $termin->vreme_pocetka)
+                    ->exists();
+
+                if ($preklapaSe) {
+                    return response()->json([
+                        'message' => 'Termin se preklapa sa drugim terminom u istoj učionici.',
+                    ], 422);
+                }
+            }
+
+            $termin->update([
+                'status' => $podaci['status'],
+                'updated_by' => $request->user()->id,
+            ]);
+
+            return response()->json($termin);
+        });
+    }
+
 }

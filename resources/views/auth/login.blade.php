@@ -11,7 +11,7 @@
             <div class="card-body">
                 <h1 class="h4 mb-3">Raspored učionica</h1>
                 <p class="text-muted small">
-                    Probna prijava (samo za razvoj): izaberi korisnika.
+                    Probna prijava
                 </p>
 
                 <form method="POST" action="{{ url('/login') }}">

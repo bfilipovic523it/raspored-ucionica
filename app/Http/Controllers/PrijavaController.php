@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 class PrijavaController extends Controller
 {
     /**
-     * Stranica za probnu prijavu: spisak korisnika iz baze.
+     * Stranica za probnu prijavu
     */
     public function forma()
     {

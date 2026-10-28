@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="sr">
-<head>
-    <meta charset="utf-8">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Raspored učionica</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+@extends('layouts.app')
+
+@section('title', 'Raspored učionica')
+
+@push('styles')
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@calendarjs/ce/dist/style.min.css">
     <script src="https://cdn.jsdelivr.net/npm/lemonadejs/dist/lemonade.min.js"></script>
@@ -25,17 +23,11 @@
         .timetable ul.room-timeline li:after  { background-size: calc(100% / 12) auto; background-position: 0 0; }
         .timetable ul.room-timeline li:before { background-size: calc(100% / 48) auto; }
     </style>
-</head>
-<body>
-    <h1>Raspored učionica</h1>
-    <p>
-        Prijavljeni ste kao <strong>{{ auth()->user()->name }}</strong> ({{ auth()->user()->uloga }}).
-        <form method="POST" action="{{ route('logout') }}" class="d-inline">
-            @csrf
-            <button type="submit" class="btn btn-sm btn-outline-secondary">Odjava</button>
-        </form>
-    </p>
+@endpush
+
+@section('content')
     <h2 id="naslov-datuma"></h2>
+    <button type="button" id="dugme-nova" class="btn btn-primary mb-3">Nova rezervacija</button>
 
     <div class="raspored">
         <div id="izbor-datuma"></div>
@@ -55,11 +47,14 @@
                     <div id="rez-greska" class="alert alert-danger d-none"></div>
 
                     <form id="forma-rezervacija">
-                        <input type="hidden" id="rez-ucionica-id">
-
                         <div class="mb-2">
                             <label class="form-label">Učionica</label>
-                            <input type="text" id="rez-ucionica" class="form-control" readonly>
+                            <select id="rez-ucionica-id" class="form-select" required>
+                                <option value="">— izaberi učionicu —</option>
+                                @foreach ($ucionice as $ucionica)
+                                    <option value="{{ $ucionica->id }}">{{ $ucionica->naziv }}</option>
+                                @endforeach
+                            </select>
                         </div>
 
                         <div class="mb-2">
@@ -139,9 +134,9 @@
             </div>
         </div>
     </div>
+@endsection
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
+@push('scripts')
     <script>
         const { Calendar } = calendarjs;
 
@@ -200,7 +195,7 @@
                 console.error('Greška pri učitavanju termina:', odgovor.status);
                 return;
             }
-            const termini = await odgovor.json();
+            const termini = (await odgovor.json()).data;
             ucitaniTermini = {};
 
             const raspored = new Timetable();
@@ -254,6 +249,19 @@
 
         prikaziDatum(danas);
         ucitajTermine(danas);
+
+        document.getElementById('dugme-nova').addEventListener('click', function () {
+            document.getElementById('rez-ucionica-id').value = '';
+            document.getElementById('rez-datum').value = izabraniDatum;
+            document.getElementById('rez-pocetak').value = '09:15';
+            document.getElementById('rez-kraj').value = '10:00';
+            document.getElementById('rez-naziv').value = '';
+            document.getElementById('rez-opis').value = '';
+            osveziTrajanje();
+            document.getElementById('rez-greska').classList.add('d-none');
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('popup-rezervacija')).show();
+        });
 
         document.getElementById('rez-pocetak').addEventListener('change', osveziTrajanje);
         document.getElementById('rez-kraj').addEventListener('change', osveziTrajanje);
@@ -361,6 +369,4 @@
             ucitajTermine(izabraniDatum);
         });
     </script>
-
-</body>
-</html>
+@endpush

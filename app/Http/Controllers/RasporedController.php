@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Ucionica;
 use App\Models\Termin;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\TerminResource;
 
 
 class RasporedController extends Controller
@@ -49,19 +50,7 @@ class RasporedController extends Controller
 
         $termini = $upit->orderBy('vreme_pocetka')->get();
 
-        $rezultat = $termini->map(function ($termin) {
-            return [
-                'id' => $termin->id,
-                'ucionica_id' => $termin->ucionica_id,
-                'naziv' => $termin->naziv,
-                'opis' => $termin->opis,
-                'vreme_pocetka' => substr($termin->vreme_pocetka, 0, 5),
-                'vreme_kraja' => substr($termin->vreme_kraja, 0, 5),
-                'status' => $termin->status,
-            ];
-        });
-
-        return response()->json($rezultat);
+        return TerminResource::collection($termini);
     }
 
     public function sacuvaj(Request $request)
@@ -100,7 +89,7 @@ class RasporedController extends Controller
                 'status' => 'ceka',                      
             ]);
 
-            return response()->json($termin, 201);
+            return new TerminResource($termin);
         });
     }
 
@@ -139,7 +128,7 @@ class RasporedController extends Controller
                 'updated_by' => $request->user()->id,
             ]);
 
-            return response()->json($termin);
+            return new TerminResource($termin);
         });
     }
 

@@ -19,11 +19,14 @@ function uVreme(minuti) {
     return sat + ':' + minut;
 }
 
+function uDatum(datumObjekat) {
+    return datumObjekat.getFullYear() + '-'
+        + String(datumObjekat.getMonth() + 1).padStart(2, '0') + '-'
+        + String(datumObjekat.getDate()).padStart(2, '0');
+}
+
 function danasnjiDatum() {
-    const sada = new Date();
-    return sada.getFullYear() + '-'
-        + String(sada.getMonth() + 1).padStart(2, '0') + '-'
-        + String(sada.getDate()).padStart(2, '0');
+    return uDatum(new Date());
 }
 
 function prikaziDatum(datum) {
@@ -49,10 +52,10 @@ function napraviIzborDatuma(elementId, naIzbor) {
     return danas;
 }
 
-function nacrtajRaspored(selektor, ucionice, termini, naziviUcionica, naKlik) {
+function nacrtajRaspored(selektor, redovi, termini, redTermina, naKlik) {
     const raspored = new Timetable();
     raspored.setScope(9, 21);
-    raspored.addLocations(ucionice);
+    raspored.addLocations(redovi);
 
     const terminiPoId = {};
 
@@ -64,7 +67,7 @@ function nacrtajRaspored(selektor, ucionice, termini, naziviUcionica, naKlik) {
 
         raspored.addEvent(
             termin.naziv,
-            naziviUcionica[termin.ucionica_id],
+            redTermina(termin),
             new Date(2000, 0, 1, satPocetka, minutPocetka),
             new Date(2000, 0, 1, satKraja, minutKraja),
             {

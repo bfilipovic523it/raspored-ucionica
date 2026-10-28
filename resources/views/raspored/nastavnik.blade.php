@@ -76,7 +76,9 @@
                 });
             });
 
-            nacrtajRaspored('.timetable', ucioniceSaTerminima, termini, naziviUcionica, null);
+            nacrtajRaspored('.timetable', ucioniceSaTerminima, termini, function (termin) {
+                return naziviUcionica[termin.ucionica_id];
+            }, null);
         }
 
         let izabraniDatum = napraviIzborDatuma('izbor-datuma', function (datum) {

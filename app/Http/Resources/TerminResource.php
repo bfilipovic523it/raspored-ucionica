@@ -17,6 +17,7 @@ class TerminResource extends JsonResource
         return [
             'id' => $this->id,
             'ucionica_id' => $this->ucionica_id,
+            'datum' => $this->datum->format('Y-m-d'),
             'naziv' => $this->naziv,
             'opis' => $this->opis,
             'vreme_pocetka' => substr($this->vreme_pocetka, 0, 5),

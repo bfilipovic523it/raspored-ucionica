@@ -153,7 +153,9 @@
                 ucitaniTermini[termin.id] = termin;
             });
 
-            nacrtajRaspored('.timetable', redosledUcionica, termini, naziviUcionica, function (termin) {
+            nacrtajRaspored('.timetable', redosledUcionica, termini, function (termin) {
+                return naziviUcionica[termin.ucionica_id];
+            }, function (termin) {
                 if (jeAdmin) {
                     otvoriPopupStatus([String(termin.id)]);
                 }

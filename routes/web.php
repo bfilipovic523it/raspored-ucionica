@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RasporedController;
 use App\Http\Controllers\PrijavaController;
 use App\Http\Controllers\RasporedNastavnikaController;
+use App\Http\Controllers\RasporedUcioniceController;
 
 
 
@@ -18,6 +19,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/raspored/termini', [RasporedController::class, 'termini'])->name('raspored.termini');
     Route::post('/raspored/termini', [RasporedController::class, 'sacuvaj'])->name('raspored.sacuvaj');
     Route::patch('/raspored/termini/{termin}/status', [RasporedController::class, 'promeniStatus'])->name('raspored.status');
+
+    Route::get('/raspored-ucionice', [RasporedUcioniceController::class, 'index'])->name('raspored.ucionica');
+    Route::get('/raspored-ucionice/termini', [RasporedUcioniceController::class, 'termini'])->name('raspored.ucionica.termini');
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {

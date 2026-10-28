@@ -34,21 +34,10 @@ class RasporedController extends Controller
             'datum' => ['required', 'date_format:Y-m-d'],
         ]);
 
-        $korisnik = $request->user();
-
-        $upit = Termin::where('datum', $podaci['datum']);
-
-        if (! $korisnik->jeAdmin()) {
-            $upit->where(function ($q) use ($korisnik) {
-                $q->where('status', 'potvrdjen')
-                ->orWhere(function ($q) use ($korisnik) {
-                    $q->where('status', 'ceka')
-                        ->where('user_id', $korisnik->id);
-                });
-            });
-        }
-
-        $termini = $upit->orderBy('vreme_pocetka')->get();
+        $termini = Termin::where('datum', $podaci['datum'])
+            ->vidljiviZa($request->user())
+            ->orderBy('vreme_pocetka')
+            ->get();
 
         return TerminResource::collection($termini);
     }

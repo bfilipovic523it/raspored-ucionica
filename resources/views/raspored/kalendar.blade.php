@@ -59,7 +59,8 @@
 
                         <div class="mb-2">
                             <label class="form-label">Datum</label>
-                            <input type="date" id="rez-datum" class="form-control" required>
+                            <input type="text" id="rez-datum" class="form-control" readonly>
+                            <div class="form-text">Datum se menja u kalendaru levo.</div>
                         </div>
 
                         <div class="row mb-2">
@@ -189,6 +190,59 @@
                 : 'kraj mora biti posle početka';
         }
 
+        function rasporediPreklapanja() {
+            document.querySelectorAll('.timetable ul.room-timeline > li').forEach(function (red) {
+                const stavke = Array.from(red.querySelectorAll('.time-entry')).map(function (element) {
+                    const termin = ucitaniTermini[element.dataset.id];
+                    return {
+                        element: element,
+                        pocetak: uMinute(termin.vreme_pocetka),
+                        kraj: uMinute(termin.vreme_kraja),
+                    };
+                }).sort(function (a, b) {
+                    return a.pocetak - b.pocetak;
+                });
+
+                let grupa = [];
+                let krajGrupe = 0;
+
+                stavke.forEach(function (stavka) {
+                    if (grupa.length > 0 && stavka.pocetak >= krajGrupe) {
+                        podeliNaTrake(grupa);
+                        grupa = [];
+                    }
+                    grupa.push(stavka);
+                    krajGrupe = grupa.length === 1 ? stavka.kraj : Math.max(krajGrupe, stavka.kraj);
+                });
+
+                if (grupa.length > 0) {
+                    podeliNaTrake(grupa);
+                }
+            });
+        }
+
+        function podeliNaTrake(grupa) {
+            const krajeviTraka = [];
+
+            grupa.forEach(function (stavka) {
+                let traka = krajeviTraka.findIndex(function (kraj) {
+                    return kraj <= stavka.pocetak;
+                });
+                if (traka === -1) {
+                    traka = krajeviTraka.length;
+                }
+                krajeviTraka[traka] = stavka.kraj;
+                stavka.traka = traka;
+            });
+
+            const brojTraka = krajeviTraka.length;
+
+            grupa.forEach(function (stavka) {
+                stavka.element.style.top = (stavka.traka * 100 / brojTraka) + '%';
+                stavka.element.style.height = (100 / brojTraka) + '%';
+            });
+        }
+
         async function ucitajTermine(datum) {
             const odgovor = await fetch('{{ route('raspored.termini') }}?datum=' + datum);
             if (!odgovor.ok) {
@@ -217,6 +271,7 @@
                     new Date(godina, mesec - 1, dan, satKraja, minutKraja),
                     {
                         class: termin.status,
+                        data: { id: termin.id },
                         onClick: function () {
                             if (jeAdmin) {
                                 otvoriPopupStatus([String(termin.id)]);
@@ -227,6 +282,7 @@
             });
 
             new Timetable.Renderer(raspored).draw('.timetable');
+            rasporediPreklapanja();
         }
 
         const sada = new Date();
@@ -252,7 +308,7 @@
 
         document.getElementById('dugme-nova').addEventListener('click', function () {
             document.getElementById('rez-ucionica-id').value = '';
-            document.getElementById('rez-datum').value = izabraniDatum;
+            document.getElementById('rez-datum').value = document.getElementById('naslov-datuma').textContent;
             document.getElementById('rez-pocetak').value = '09:15';
             document.getElementById('rez-kraj').value = '10:00';
             document.getElementById('rez-naziv').value = '';
@@ -281,7 +337,7 @@
                 },
                 body: JSON.stringify({
                     ucionica_id: document.getElementById('rez-ucionica-id').value,
-                    datum: document.getElementById('rez-datum').value,
+                    datum: izabraniDatum,
                     vreme_pocetka: document.getElementById('rez-pocetak').value,
                     vreme_kraja: document.getElementById('rez-kraj').value,
                     naziv: document.getElementById('rez-naziv').value,

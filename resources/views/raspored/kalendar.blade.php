@@ -9,24 +9,21 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@calendarjs/ce/dist/style.min.css">
     <script src="https://cdn.jsdelivr.net/npm/lemonadejs/dist/lemonade.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@calendarjs/ce/dist/index.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/timetable.js@0.9.0/dist/styles/timetablejs.css">
+    <script src="https://cdn.jsdelivr.net/npm/timetable.js@0.9.0/dist/scripts/timetable.min.js"></script>
     <style>
-        .omotac { overflow-x: auto; }
-
-        .mreza { border-collapse: collapse; font-size: 12px; }
-        .mreza th, .mreza td { border: 1px solid #ccc; padding: 2px 6px; }
-        .mreza th { background: #f0f0f0; white-space: nowrap; }
-
-        .mreza td.polje { min-width: 70px; height: 14px; }
-
-        .mreza tr.pun-sat td, .mreza tr.pun-sat th { border-top: 2px solid #888; }
-
         .raspored { display: flex; gap: 16px; align-items: flex-start; }
 
-        .raspored .omotac { flex: 1; min-width: 0; }
+        .raspored .timetable { flex: 1; min-width: 0; }
 
-        .mreza td.potvrdjen { background: #cfe2ff; }               
-        .mreza td.ceka      { background: #fff3b0; }      
-        .mreza td.odbijen   { background: #e0e0e0; color: #666; }
+        .timetable .time-entry.potvrdjen { background-color: #0d6efd; border-color: #0a58ca; }
+        .timetable .time-entry.ceka      { background-color: #ffc107; border-color: #e0a800; color: #000; }
+        .timetable .time-entry.odbijen   { background-color: #adb5bd; border-color: #6c757d; color: #000; }
+
+        .timetable > section > header li:not(:last-of-type) { width: calc(100% / 12); }
+
+        .timetable ul.room-timeline li:after  { background-size: calc(100% / 12) auto; background-position: 0 0; }
+        .timetable ul.room-timeline li:before { background-size: calc(100% / 48) auto; }
     </style>
 </head>
 <body>
@@ -43,28 +40,7 @@
     <div class="raspored">
         <div id="izbor-datuma"></div>
 
-        <div class="omotac">
-            <table class="mreza">
-                <thead>
-                    <tr>
-                        <th>Vreme</th>
-                        @foreach ($ucionice as $ucionica)
-                            <th>{{ $ucionica->naziv }}</th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($vremena as $vreme)
-                        <tr class="{{ str_ends_with($vreme, ':00') ? 'pun-sat' : '' }}">
-                            <th>{{ $vreme }}</th>
-                            @foreach ($ucionice as $ucionica)
-                                <td class="polje" data-ucionica="{{ $ucionica->id }}" data-vreme="{{ $vreme }}"></td>
-                            @endforeach
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+        <div class="timetable"></div>
     </div>
 
     <div class="modal fade" id="popup-rezervacija" tabindex="-1">
@@ -171,6 +147,8 @@
 
         const naziviUcionica = @json($ucionice->pluck('naziv', 'id'));
 
+        const redosledUcionica = @json($ucionice->pluck('naziv'));
+
         const jeAdmin = {{ auth()->user()->jeAdmin() ? 'true' : 'false' }};
 
         let ucitaniTermini = {};
@@ -217,13 +195,6 @@
         }
 
         async function ucitajTermine(datum) {
-            document.querySelectorAll('.mreza td.polje').forEach(function (polje) {
-                polje.className = 'polje';
-                polje.textContent = '';
-                polje.title = '';
-                delete polje.dataset.termini;
-            });
-
             const odgovor = await fetch('{{ route('raspored.termini') }}?datum=' + datum);
             if (!odgovor.ok) {
                 console.error('Greška pri učitavanju termina:', odgovor.status);
@@ -232,32 +203,35 @@
             const termini = await odgovor.json();
             ucitaniTermini = {};
 
-            const poredak = termini.filter(t => t.status === 'odbijen')
-                .concat(termini.filter(t => t.status !== 'odbijen'));
+            const raspored = new Timetable();
+            raspored.setScope(9, 21);
+            raspored.addLocations(redosledUcionica);
 
-            poredak.forEach(function (termin) {
+            const [godina, mesec, dan] = datum.split('-').map(Number);
+
+            termini.forEach(function (termin) {
                 ucitaniTermini[termin.id] = termin;
-                const pocetak = uMinute(termin.vreme_pocetka);
-                const kraj = uMinute(termin.vreme_kraja);
 
-                for (let m = pocetak; m < kraj; m += 15) {
-                    const polje = document.querySelector(
-                        '.mreza td[data-ucionica="' + termin.ucionica_id + '"][data-vreme="' + uVreme(m) + '"]'
-                    );
-                    if (!polje) continue; 
+                const [satPocetka, minutPocetka] = termin.vreme_pocetka.split(':').map(Number);
+                const [satKraja, minutKraja] = termin.vreme_kraja.split(':').map(Number);
 
-                    polje.classList.remove('potvrdjen', 'ceka', 'odbijen');
-                    polje.classList.add(termin.status);
-
-                    const lista = polje.dataset.termini ? polje.dataset.termini.split(',') : [];
-                    lista.push(termin.id);
-                    polje.dataset.termini = lista.join(',');
-                    polje.title = termin.naziv + ' (' + termin.vreme_pocetka + '–' + termin.vreme_kraja + ')';
-                    if (m === pocetak) {
-                        polje.textContent = termin.naziv;
+                raspored.addEvent(
+                    termin.naziv,
+                    naziviUcionica[termin.ucionica_id],
+                    new Date(godina, mesec - 1, dan, satPocetka, minutPocetka),
+                    new Date(godina, mesec - 1, dan, satKraja, minutKraja),
+                    {
+                        class: termin.status,
+                        onClick: function () {
+                            if (jeAdmin) {
+                                otvoriPopupStatus([String(termin.id)]);
+                            }
+                        },
                     }
-                }
+                );
             });
+
+            new Timetable.Renderer(raspored).draw('.timetable');
         }
 
         const sada = new Date();
@@ -280,34 +254,6 @@
 
         prikaziDatum(danas);
         ucitajTermine(danas);
-
-        document.querySelector('.mreza').addEventListener('click', function (dogadjaj) {
-            const polje = dogadjaj.target.closest('td.polje');  
-            if (!polje) return;                                   
-
-            const vreme = polje.dataset.vreme;
-            if (vreme === '21:00') return;                        
-
-            if (jeAdmin && polje.dataset.termini) {
-                otvoriPopupStatus(polje.dataset.termini.split(','));
-                return;
-            }
-
-            if (polje.classList.contains('potvrdjen') || polje.classList.contains('ceka')) return;
-
-            const ucionicaId = polje.dataset.ucionica;
-            document.getElementById('rez-ucionica-id').value = ucionicaId;
-            document.getElementById('rez-ucionica').value = naziviUcionica[ucionicaId];
-            document.getElementById('rez-datum').value = izabraniDatum;
-            document.getElementById('rez-pocetak').value = vreme;
-            document.getElementById('rez-kraj').value = uVreme(Math.min(uMinute(vreme) + 45, 21 * 60));
-            document.getElementById('rez-naziv').value = '';
-            document.getElementById('rez-opis').value = '';
-            osveziTrajanje();
-            document.getElementById('rez-greska').classList.add('d-none');   
-
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('popup-rezervacija')).show();
-        });
 
         document.getElementById('rez-pocetak').addEventListener('change', osveziTrajanje);
         document.getElementById('rez-kraj').addEventListener('change', osveziTrajanje);
@@ -409,6 +355,10 @@
                     greska.classList.remove('d-none');
                 }
             });
+        });
+
+        window.addEventListener('resize', function () {
+            ucitajTermine(izabraniDatum);
         });
     </script>
 

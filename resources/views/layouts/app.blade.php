@@ -15,6 +15,10 @@
             <div class="container-fluid">
                 <a class="navbar-brand" href="{{ route('home') }}">Raspored učionica</a>
 
+                @if (auth()->user()->jeAdmin())
+                    <a class="nav-link text-white me-auto ms-3" href="{{ route('raspored.nastavnik') }}">Raspored nastavnika</a>
+                @endif
+
                 <div class="d-flex align-items-center gap-3">
                     <span class="navbar-text text-white">
                         {{ auth()->user()->name }}

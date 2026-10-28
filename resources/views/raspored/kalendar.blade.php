@@ -3,26 +3,7 @@
 @section('title', 'Raspored učionica')
 
 @push('styles')
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@calendarjs/ce/dist/style.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/lemonadejs/dist/lemonade.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@calendarjs/ce/dist/index.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/timetable.js@0.9.0/dist/styles/timetablejs.css">
-    <script src="https://cdn.jsdelivr.net/npm/timetable.js@0.9.0/dist/scripts/timetable.min.js"></script>
-    <style>
-        .raspored { display: flex; gap: 16px; align-items: flex-start; }
-
-        .raspored .timetable { flex: 1; min-width: 0; }
-
-        .timetable .time-entry.potvrdjen { background-color: #0d6efd; border-color: #0a58ca; }
-        .timetable .time-entry.ceka      { background-color: #ffc107; border-color: #e0a800; color: #000; }
-        .timetable .time-entry.odbijen   { background-color: #adb5bd; border-color: #6c757d; color: #000; }
-
-        .timetable > section > header li:not(:last-of-type) { width: calc(100% / 12); }
-
-        .timetable ul.room-timeline li:after  { background-size: calc(100% / 12) auto; background-position: 0 0; }
-        .timetable ul.room-timeline li:before { background-size: calc(100% / 48) auto; }
-    </style>
+    @include('raspored._biblioteke')
 @endpush
 
 @section('content')
@@ -139,8 +120,6 @@
 
 @push('scripts')
     <script>
-        const { Calendar } = calendarjs;
-
         const naziviUcionica = @json($ucionice->pluck('naziv', 'id'));
 
         const redosledUcionica = @json($ucionice->pluck('naziv'));
@@ -150,35 +129,6 @@
         let ucitaniTermini = {};
 
         let izabraniTerminId = null;
-
-        calendarjs.setDictionary({
-            'January': 'Januar', 'February': 'Februar', 'March': 'Mart',
-            'April': 'April', 'May': 'Maj', 'June': 'Jun',
-            'July': 'Jul', 'August': 'Avgust', 'September': 'Septembar',
-            'October': 'Oktobar', 'November': 'Novembar', 'December': 'Decembar',
-            'Sunday': 'Nedelja', 'Monday': 'Ponedeljak', 'Tuesday': 'Utorak',
-            'Wednesday': 'Sreda', 'Thursday': 'Četvrtak', 'Friday': 'Petak',
-            'Saturday': 'Subota', 'Done': 'Gotovo', 'Reset': 'Poništi'
-        });
-
-        function prikaziDatum(datum) {
-            const dani = ['Nedelja', 'Ponedeljak', 'Utorak', 'Sreda', 'Četvrtak', 'Petak', 'Subota'];
-            const [godina, mesec, dan] = datum.split('-');                  
-            const danUNedelji = new Date(godina, mesec - 1, dan).getDay();  
-            document.getElementById('naslov-datuma').textContent =
-                dani[danUNedelji] + ', ' + dan + '.' + mesec + '.' + godina + '.';
-        }
-
-        function uMinute(vreme) {
-            const [sat, minut] = vreme.split(':');
-            return Number(sat) * 60 + Number(minut);
-        }
-
-        function uVreme(minuti) {
-            const sat = String(Math.floor(minuti / 60)).padStart(2, '0');
-            const minut = String(minuti % 60).padStart(2, '0');
-            return sat + ':' + minut;
-        }
 
         function osveziTrajanje() {
             const pocetak = uMinute(document.getElementById('rez-pocetak').value);
@@ -190,59 +140,6 @@
                 : 'kraj mora biti posle početka';
         }
 
-        function rasporediPreklapanja() {
-            document.querySelectorAll('.timetable ul.room-timeline > li').forEach(function (red) {
-                const stavke = Array.from(red.querySelectorAll('.time-entry')).map(function (element) {
-                    const termin = ucitaniTermini[element.dataset.id];
-                    return {
-                        element: element,
-                        pocetak: uMinute(termin.vreme_pocetka),
-                        kraj: uMinute(termin.vreme_kraja),
-                    };
-                }).sort(function (a, b) {
-                    return a.pocetak - b.pocetak;
-                });
-
-                let grupa = [];
-                let krajGrupe = 0;
-
-                stavke.forEach(function (stavka) {
-                    if (grupa.length > 0 && stavka.pocetak >= krajGrupe) {
-                        podeliNaTrake(grupa);
-                        grupa = [];
-                    }
-                    grupa.push(stavka);
-                    krajGrupe = grupa.length === 1 ? stavka.kraj : Math.max(krajGrupe, stavka.kraj);
-                });
-
-                if (grupa.length > 0) {
-                    podeliNaTrake(grupa);
-                }
-            });
-        }
-
-        function podeliNaTrake(grupa) {
-            const krajeviTraka = [];
-
-            grupa.forEach(function (stavka) {
-                let traka = krajeviTraka.findIndex(function (kraj) {
-                    return kraj <= stavka.pocetak;
-                });
-                if (traka === -1) {
-                    traka = krajeviTraka.length;
-                }
-                krajeviTraka[traka] = stavka.kraj;
-                stavka.traka = traka;
-            });
-
-            const brojTraka = krajeviTraka.length;
-
-            grupa.forEach(function (stavka) {
-                stavka.element.style.top = (stavka.traka * 100 / brojTraka) + '%';
-                stavka.element.style.height = (100 / brojTraka) + '%';
-            });
-        }
-
         async function ucitajTermine(datum) {
             const odgovor = await fetch('{{ route('raspored.termini') }}?datum=' + datum);
             if (!odgovor.ok) {
@@ -250,61 +147,27 @@
                 return;
             }
             const termini = (await odgovor.json()).data;
+
             ucitaniTermini = {};
-
-            const raspored = new Timetable();
-            raspored.setScope(9, 21);
-            raspored.addLocations(redosledUcionica);
-
-            const [godina, mesec, dan] = datum.split('-').map(Number);
-
             termini.forEach(function (termin) {
                 ucitaniTermini[termin.id] = termin;
-
-                const [satPocetka, minutPocetka] = termin.vreme_pocetka.split(':').map(Number);
-                const [satKraja, minutKraja] = termin.vreme_kraja.split(':').map(Number);
-
-                raspored.addEvent(
-                    termin.naziv,
-                    naziviUcionica[termin.ucionica_id],
-                    new Date(godina, mesec - 1, dan, satPocetka, minutPocetka),
-                    new Date(godina, mesec - 1, dan, satKraja, minutKraja),
-                    {
-                        class: termin.status,
-                        data: { id: termin.id },
-                        onClick: function () {
-                            if (jeAdmin) {
-                                otvoriPopupStatus([String(termin.id)]);
-                            }
-                        },
-                    }
-                );
             });
 
-            new Timetable.Renderer(raspored).draw('.timetable');
-            rasporediPreklapanja();
+            nacrtajRaspored('.timetable', redosledUcionica, termini, naziviUcionica, function (termin) {
+                if (jeAdmin) {
+                    otvoriPopupStatus([String(termin.id)]);
+                }
+            });
         }
 
-        const sada = new Date();
-        const danas = sada.getFullYear() + '-'
-            + String(sada.getMonth() + 1).padStart(2, '0') + '-'
-            + String(sada.getDate()).padStart(2, '0');
-
-        let izabraniDatum = danas;
-
-        Calendar(document.getElementById('izbor-datuma'), {
-            type: 'inline',
-            startingDay: 1,
-            value: danas,
-            onchange: function (self, vrednost) {
-                izabraniDatum = vrednost.slice(0, 10);
-                prikaziDatum(vrednost.slice(0, 10));
-                ucitajTermine(vrednost.slice(0, 10));
-            },
+        let izabraniDatum = napraviIzborDatuma('izbor-datuma', function (datum) {
+            izabraniDatum = datum;
+            prikaziDatum(datum);
+            ucitajTermine(datum);
         });
 
-        prikaziDatum(danas);
-        ucitajTermine(danas);
+        prikaziDatum(izabraniDatum);
+        ucitajTermine(izabraniDatum);
 
         document.getElementById('dugme-nova').addEventListener('click', function () {
             document.getElementById('rez-ucionica-id').value = '';

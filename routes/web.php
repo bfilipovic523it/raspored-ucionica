@@ -25,6 +25,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/raspored-nastavnika', [RasporedNastavnikaController::class, 'index'])->name('raspored.nastavnik');
     Route::get('/raspored-nastavnika/termini', [RasporedNastavnikaController::class, 'termini'])->name('raspored.nastavnik.termini');
+
+    Route::get('/nedeljni-raspored-nastavnika', [RasporedNastavnikaController::class, 'nedelja'])->name('raspored.nastavnik.nedelja');
+    Route::get('/nedeljni-raspored-nastavnika/termini', [RasporedNastavnikaController::class, 'terminiNedelje'])->name('raspored.nastavnik.nedelja.termini');
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {

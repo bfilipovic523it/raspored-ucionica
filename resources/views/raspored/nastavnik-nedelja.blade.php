@@ -73,7 +73,7 @@
             }), termini, function (termin) {
                 return oznakaZaDatum[termin.datum];
             }, function (termin) {
-                prikaziDetaljeTermina(termin, naziviUcionica);
+                prikaziDetaljeTermina(termin, naziviUcionica, ucitajTermineNastavnika);
             });
         }
 

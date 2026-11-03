@@ -81,7 +81,7 @@
             nacrtajRaspored('.timetable', ucioniceSaTerminima, termini, function (termin) {
                 return naziviUcionica[termin.ucionica_id];
             }, function (termin) {
-                prikaziDetaljeTermina(termin, naziviUcionica);
+                prikaziDetaljeTermina(termin, naziviUcionica, ucitajTermineNastavnika);
             });
         }
 

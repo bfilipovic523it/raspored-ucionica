@@ -93,32 +93,6 @@
         </div>
     </div>
 
-    {{-- Popup za promenu statusa (samo za admina). --}}
-    <div class="modal fade" id="popup-status" tabindex="-1">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Termin</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zatvori"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="status-greska" class="alert alert-danger d-none"></div>
-                    <select id="status-izbor" class="form-select form-select-sm mb-2 d-none"></select>
-                    <p class="mb-1"><strong id="status-naziv"></strong></p>
-                    <p class="mb-1" id="status-vreme"></p>
-                    <p class="mb-1" id="status-nastavnik"></p>
-                    <p class="mb-1 text-muted" id="status-opis"></p>
-                    <p class="mb-0">Trenutni status: <strong id="status-trenutni"></strong></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-success btn-sm" data-status="potvrdjen">Potvrdi</button>
-                    <button type="button" class="btn btn-secondary btn-sm" data-status="odbijen">Odbij</button>
-                    <button type="button" class="btn btn-warning btn-sm" data-status="ceka">Na čekanju</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     @include('raspored._popup-detalji')
 @endsection
 
@@ -127,12 +101,6 @@
         const naziviUcionica = @json($ucionice->pluck('naziv', 'id'));
 
         const redosledUcionica = @json($ucionice->pluck('naziv'));
-
-        const jeAdmin = {{ auth()->user()->jeAdmin() ? 'true' : 'false' }};
-
-        let ucitaniTermini = {};
-
-        let izabraniTerminId = null;
 
         function osveziTrajanje() {
             const pocetak = uMinute(document.getElementById('rez-pocetak').value);
@@ -152,19 +120,12 @@
             }
             const termini = (await odgovor.json()).data;
 
-            ucitaniTermini = {};
-            termini.forEach(function (termin) {
-                ucitaniTermini[termin.id] = termin;
-            });
-
             nacrtajRaspored('.timetable', redosledUcionica, termini, function (termin) {
                 return naziviUcionica[termin.ucionica_id];
             }, function (termin) {
-                if (jeAdmin) {
-                    otvoriPopupStatus([String(termin.id)]);
-                } else {
-                    prikaziDetaljeTermina(termin, naziviUcionica);
-                }
+                prikaziDetaljeTermina(termin, naziviUcionica, function () {
+                    ucitajTermine(izabraniDatum);
+                });
             });
         }
 
@@ -224,73 +185,6 @@
                 greska.textContent = podaci.message;
                 greska.classList.remove('d-none');
             }
-        });
-
-        function otvoriPopupStatus(terminIds) {
-            const izbor = document.getElementById('status-izbor');
-            izbor.innerHTML = '';
-
-            if (terminIds.length > 1) {
-                terminIds.forEach(function (id) {
-                    const termin = ucitaniTermini[id];
-                    const opcija = document.createElement('option');
-                    opcija.value = id;
-                    opcija.textContent = termin.naziv + ' (' + termin.status + ')';
-                    izbor.appendChild(opcija);
-                });
-                izbor.classList.remove('d-none');
-            } else {
-                izbor.classList.add('d-none');
-            }
-
-            izbor.value = terminIds[terminIds.length - 1];
-            prikaziTerminUPopupu(terminIds[terminIds.length - 1]);
-
-            document.getElementById('status-greska').classList.add('d-none');
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('popup-status')).show();
-        }
-
-        function prikaziTerminUPopupu(terminId) {
-            const termin = ucitaniTermini[terminId];
-            izabraniTerminId = terminId;
-
-            document.getElementById('status-naziv').textContent = termin.naziv;
-            document.getElementById('status-vreme').textContent =
-                naziviUcionica[termin.ucionica_id] + ', ' + termin.vreme_pocetka + '–' + termin.vreme_kraja;
-            document.getElementById('status-nastavnik').textContent = 'Nastavnik: ' + (termin.nastavnik || '—');
-            document.getElementById('status-opis').textContent = termin.opis || '';
-            document.getElementById('status-trenutni').textContent = termin.status;
-        }
-
-        document.getElementById('status-izbor').addEventListener('change', function () {
-            prikaziTerminUPopupu(this.value);
-            document.getElementById('status-greska').classList.add('d-none');
-        });
-
-        document.querySelectorAll('#popup-status [data-status]').forEach(function (dugme) {
-            dugme.addEventListener('click', async function () {
-                const greska = document.getElementById('status-greska');
-                greska.classList.add('d-none');
-
-                const odgovor = await fetch('{{ url('/raspored/termini') }}/' + izabraniTerminId + '/status', {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    },
-                    body: JSON.stringify({ status: dugme.dataset.status }),
-                });
-
-                if (odgovor.ok) {
-                    bootstrap.Modal.getInstance(document.getElementById('popup-status')).hide();
-                    ucitajTermine(izabraniDatum);  
-                } else {
-                    const podaci = await odgovor.json();
-                    greska.textContent = podaci.message;
-                    greska.classList.remove('d-none');
-                }
-            });
         });
 
         window.addEventListener('resize', function () {

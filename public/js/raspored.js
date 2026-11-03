@@ -68,8 +68,15 @@ const naziviStatusa = {
     odbijen: 'odbijen',
 };
 
-function prikaziDetaljeTermina(termin, naziviUcionica) {
+let prikazaniTerminId = null;
+let posleIzmeneStatusa = null;
+
+function prikaziDetaljeTermina(termin, naziviUcionica, posleIzmene) {
     const [godina, mesec, dan] = termin.datum.split('-');
+
+    prikazaniTerminId = termin.id;
+    posleIzmeneStatusa = posleIzmene;
+    document.getElementById('detalji-greska').classList.add('d-none');
 
     document.getElementById('detalji-naziv').textContent = termin.naziv;
     document.getElementById('detalji-ucionica').textContent = naziviUcionica[termin.ucionica_id];
@@ -81,6 +88,38 @@ function prikaziDetaljeTermina(termin, naziviUcionica) {
 
     bootstrap.Modal.getOrCreateInstance(document.getElementById('popup-detalji')).show();
 }
+
+document.addEventListener('click', async function (dogadjaj) {
+    const dugme = dogadjaj.target.closest('#popup-detalji [data-status]');
+    if (!dugme) {
+        return;
+    }
+
+    const popup = document.getElementById('popup-detalji');
+    const greska = document.getElementById('detalji-greska');
+    greska.classList.add('d-none');
+
+    const odgovor = await fetch(popup.dataset.urlTermini + '/' + prikazaniTerminId + '/status', {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({ status: dugme.dataset.status }),
+    });
+
+    if (odgovor.ok) {
+        bootstrap.Modal.getInstance(popup).hide();
+        if (posleIzmeneStatusa) {
+            posleIzmeneStatusa();
+        }
+    } else {
+        const podaci = await odgovor.json();
+        greska.textContent = podaci.message;
+        greska.classList.remove('d-none');
+    }
+});
 
 function napraviIzborDatuma(elementId, naIzbor) {
     const danas = danasnjiDatum();

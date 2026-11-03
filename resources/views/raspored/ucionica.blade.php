@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Raspored učionice')
+@section('title', 'Nedeljni raspored učionica')
 
 @push('styles')
     @include('raspored._biblioteke')
 @endpush
 
 @section('content')
-    <h2>Raspored učionice</h2>
+    <h2>Nedeljni raspored učionica</h2>
 
     <div class="mb-3" style="max-width: 400px;">
         <label class="form-label" for="izbor-ucionice">Učionica</label>

@@ -1,13 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'Raspored učionica')
+@section('title', 'Dnevni raspored učionica')
 
 @push('styles')
     @include('raspored._biblioteke')
 @endpush
 
 @section('content')
-    <h2 id="naslov-datuma"></h2>
+    <h2>Dnevni raspored učionica</h2>
+    <h4 id="naslov-datuma"></h4>
     <button type="button" id="dugme-nova" class="btn btn-primary mb-3">Nova rezervacija</button>
 
     <div class="raspored">

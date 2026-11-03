@@ -13,12 +13,10 @@
     @auth
         <nav class="navbar navbar-dark bg-primary mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{{ route('home') }}">Raspored</a>
-
-                <div class="d-flex gap-3 me-auto ms-3">
-                    <a class="nav-link text-white" href="{{ route('raspored.ucionica') }}">Raspored učionice</a>
-
-                    <a class="nav-link text-white" href="{{ route('raspored.nastavnik') }}">Raspored nastavnika</a>
+                <div class="d-flex gap-3 me-auto">
+                    <a class="nav-link text-white" href="{{ route('home') }}">Dnevni raspored učionica</a>
+                    <a class="nav-link text-white" href="{{ route('raspored.ucionica') }}">Nedeljni raspored učionica</a>
+                    <a class="nav-link text-white" href="{{ route('raspored.nastavnik') }}">Dnevni raspored nastavnika</a>
                 </div>
 
                 <div class="d-flex align-items-center gap-3">

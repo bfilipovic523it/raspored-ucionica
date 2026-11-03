@@ -68,20 +68,12 @@
                 oznakaZaDatum[dan.datum] = dan.oznaka;
             });
 
-            const originalPoId = {};
-            const terminiSaUcionicom = termini.map(function (termin) {
-                originalPoId[termin.id] = termin;
-                return Object.assign({}, termin, {
-                    naziv: termin.naziv + ' (' + naziviUcionica[termin.ucionica_id] + ')',
-                });
-            });
-
             nacrtajRaspored('.timetable', dani.map(function (dan) {
                 return dan.oznaka;
-            }), terminiSaUcionicom, function (termin) {
+            }), termini, function (termin) {
                 return oznakaZaDatum[termin.datum];
             }, function (termin) {
-                prikaziDetaljeTermina(originalPoId[termin.id], naziviUcionica);
+                prikaziDetaljeTermina(termin, naziviUcionica);
             });
         }
 

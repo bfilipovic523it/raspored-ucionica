@@ -106,6 +106,7 @@
                     <select id="status-izbor" class="form-select form-select-sm mb-2 d-none"></select>
                     <p class="mb-1"><strong id="status-naziv"></strong></p>
                     <p class="mb-1" id="status-vreme"></p>
+                    <p class="mb-1" id="status-nastavnik"></p>
                     <p class="mb-1 text-muted" id="status-opis"></p>
                     <p class="mb-0">Trenutni status: <strong id="status-trenutni"></strong></p>
                 </div>
@@ -117,6 +118,8 @@
             </div>
         </div>
     </div>
+
+    @include('raspored._popup-detalji')
 @endsection
 
 @push('scripts')
@@ -159,6 +162,8 @@
             }, function (termin) {
                 if (jeAdmin) {
                     otvoriPopupStatus([String(termin.id)]);
+                } else {
+                    prikaziDetaljeTermina(termin, naziviUcionica);
                 }
             });
         }
@@ -252,6 +257,7 @@
             document.getElementById('status-naziv').textContent = termin.naziv;
             document.getElementById('status-vreme').textContent =
                 naziviUcionica[termin.ucionica_id] + ', ' + termin.vreme_pocetka + '–' + termin.vreme_kraja;
+            document.getElementById('status-nastavnik').textContent = 'Nastavnik: ' + (termin.nastavnik || '—');
             document.getElementById('status-opis').textContent = termin.opis || '';
             document.getElementById('status-trenutni').textContent = termin.status;
         }

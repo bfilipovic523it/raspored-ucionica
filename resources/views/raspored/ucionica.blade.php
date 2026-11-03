@@ -29,10 +29,14 @@
             <div class="timetable"></div>
         </div>
     </div>
+
+    @include('raspored._popup-detalji')
 @endsection
 
 @push('scripts')
     <script>
+        const naziviUcionica = @json($ucionice->pluck('naziv', 'id'));
+
         const izborUcionice = document.getElementById('izbor-ucionice');
         const poruka = document.getElementById('poruka');
         const kontejner = document.querySelector('.timetable');
@@ -68,7 +72,9 @@
                 return dan.oznaka;
             }), termini, function (termin) {
                 return oznakaZaDatum[termin.datum];
-            }, null);
+            }, function (termin) {
+                prikaziDetaljeTermina(termin, naziviUcionica);
+            });
         }
 
         let izabraniDatum = napraviIzborDatuma('izbor-datuma', function (datum) {

@@ -23,6 +23,7 @@ class TerminResource extends JsonResource
             'vreme_pocetka' => substr($this->vreme_pocetka, 0, 5),
             'vreme_kraja' => substr($this->vreme_kraja, 0, 5),
             'status' => $this->status,
+            'nastavnik' => $this->user?->name,
         ];
     }
 }

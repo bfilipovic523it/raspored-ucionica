@@ -62,6 +62,26 @@ function prikaziNedelju(dani) {
         + poslednji[2] + '.' + poslednji[1] + '.' + poslednji[0] + '.';
 }
 
+const naziviStatusa = {
+    potvrdjen: 'potvrđen',
+    ceka: 'na čekanju',
+    odbijen: 'odbijen',
+};
+
+function prikaziDetaljeTermina(termin, naziviUcionica) {
+    const [godina, mesec, dan] = termin.datum.split('-');
+
+    document.getElementById('detalji-naziv').textContent = termin.naziv;
+    document.getElementById('detalji-ucionica').textContent = naziviUcionica[termin.ucionica_id];
+    document.getElementById('detalji-datum').textContent = dan + '.' + mesec + '.' + godina + '.';
+    document.getElementById('detalji-vreme').textContent = termin.vreme_pocetka + '–' + termin.vreme_kraja;
+    document.getElementById('detalji-nastavnik').textContent = termin.nastavnik || '—';
+    document.getElementById('detalji-status').textContent = naziviStatusa[termin.status];
+    document.getElementById('detalji-opis').textContent = termin.opis || '—';
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('popup-detalji')).show();
+}
+
 function napraviIzborDatuma(elementId, naIzbor) {
     const danas = danasnjiDatum();
 

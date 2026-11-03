@@ -30,6 +30,7 @@ class RasporedUcioniceController extends Controller
         $termini = Termin::where('ucionica_id', $podaci['ucionica_id'])
             ->whereBetween('datum', [$ponedeljak->toDateString(), $nedelja->toDateString()])
             ->vidljiviZa($request->user())
+            ->with('user')
             ->orderBy('datum')
             ->orderBy('vreme_pocetka')
             ->get();

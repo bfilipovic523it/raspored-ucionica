@@ -29,6 +29,8 @@
             <div class="timetable"></div>
         </div>
     </div>
+
+    @include('raspored._popup-detalji')
 @endsection
 
 @push('scripts')
@@ -78,7 +80,9 @@
 
             nacrtajRaspored('.timetable', ucioniceSaTerminima, termini, function (termin) {
                 return naziviUcionica[termin.ucionica_id];
-            }, null);
+            }, function (termin) {
+                prikaziDetaljeTermina(termin, naziviUcionica);
+            });
         }
 
         let izabraniDatum = napraviIzborDatuma('izbor-datuma', function (datum) {

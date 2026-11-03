@@ -36,6 +36,7 @@ class RasporedController extends Controller
 
         $termini = Termin::where('datum', $podaci['datum'])
             ->vidljiviZa($request->user())
+            ->with('user')
             ->orderBy('vreme_pocetka')
             ->get();
 

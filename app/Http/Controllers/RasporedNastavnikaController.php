@@ -32,6 +32,7 @@ class RasporedNastavnikaController extends Controller
         $termini = Termin::where('datum', $podaci['datum'])
             ->where('user_id', $podaci['nastavnik_id'])
             ->vidljiviZa($request->user())
+            ->with('user')
             ->orderBy('vreme_pocetka')
             ->get();
 
@@ -62,6 +63,7 @@ class RasporedNastavnikaController extends Controller
         $termini = Termin::where('user_id', $podaci['nastavnik_id'])
             ->whereBetween('datum', [$ponedeljak->toDateString(), $nedelja->toDateString()])
             ->vidljiviZa($request->user())
+            ->with('user')
             ->orderBy('datum')
             ->orderBy('vreme_pocetka')
             ->get();

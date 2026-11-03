@@ -72,12 +72,6 @@ class Termin extends Model
             return $upit;
         }
 
-        return $upit->where(function ($q) use ($korisnik) {
-            $q->where('status', 'potvrdjen')
-                ->orWhere(function ($q) use ($korisnik) {
-                    $q->where('status', 'ceka')
-                        ->where('user_id', $korisnik->id);
-                });
-        });
+        return $upit->whereIn('status', ['potvrdjen', 'ceka']);
     }
 }

@@ -18,9 +18,7 @@
                 <div class="d-flex gap-3 me-auto ms-3">
                     <a class="nav-link text-white" href="{{ route('raspored.ucionica') }}">Raspored učionice</a>
 
-                    @if (auth()->user()->jeAdmin())
-                        <a class="nav-link text-white" href="{{ route('raspored.nastavnik') }}">Raspored nastavnika</a>
-                    @endif
+                    <a class="nav-link text-white" href="{{ route('raspored.nastavnik') }}">Raspored nastavnika</a>
                 </div>
 
                 <div class="d-flex align-items-center gap-3">

@@ -22,11 +22,12 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/raspored-ucionice', [RasporedUcioniceController::class, 'index'])->name('raspored.ucionica');
     Route::get('/raspored-ucionice/termini', [RasporedUcioniceController::class, 'termini'])->name('raspored.ucionica.termini');
+
+    Route::get('/raspored-nastavnika', [RasporedNastavnikaController::class, 'index'])->name('raspored.nastavnik');
+    Route::get('/raspored-nastavnika/termini', [RasporedNastavnikaController::class, 'termini'])->name('raspored.nastavnik.termini');
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {
-    Route::get('/raspored-nastavnika', [RasporedNastavnikaController::class, 'index'])->name('raspored.nastavnik');
-    Route::get('/raspored-nastavnika/termini', [RasporedNastavnikaController::class, 'termini'])->name('raspored.nastavnik.termini');
 });
 
 Route::get('/login', [PrijavaController::class, 'forma'])->name('login');

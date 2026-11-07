@@ -23,7 +23,7 @@ class TerminFactory extends Factory
             'datum' => fake()->date(),
             'vreme_pocetka' => fake()->time(),
             'vreme_kraja' => fake()->time(),
-            'bulk_uid' => fake()->word(),
+            'raspored_id' => null,
             'status' => fake()->randomElement(["potvrdjen","odbijen","ceka"]),
         ];
     }

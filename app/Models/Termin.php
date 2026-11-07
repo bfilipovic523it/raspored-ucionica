@@ -18,6 +18,7 @@ class Termin extends Model
     protected $fillable = [
         'ucionica_id',
         'user_id',
+        'raspored_id',
         'created_by',
         'updated_by',
         'naziv',
@@ -25,7 +26,6 @@ class Termin extends Model
         'datum',
         'vreme_pocetka',
         'vreme_kraja',
-        'bulk_uid',
         'status',
     ];
 
@@ -40,6 +40,7 @@ class Termin extends Model
             'id' => 'integer',
             'ucionica_id' => 'integer',
             'user_id' => 'integer',
+            'raspored_id' => 'integer',
             'created_by' => 'integer',
             'updated_by' => 'integer',
             'datum' => 'date',
@@ -54,6 +55,11 @@ class Termin extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function raspored(): BelongsTo
+    {
+        return $this->belongsTo(Raspored::class);
     }
 
     public function createdBy(): BelongsTo

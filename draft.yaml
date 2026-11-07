@@ -5,9 +5,19 @@ models:
     relationships:
       hasMany: Termin
 
+  Raspored:
+    naziv: string
+    tip: enum:nastava,testiranje
+    user_id: id foreign
+    fajl_raspored: string
+    fajl_dani: string nullable
+    relationships:
+      hasMany: Termin
+
   Termin:
     ucionica_id: id foreign
     user_id: id foreign
+    raspored_id: id foreign nullable
     created_by: id foreign:users.id nullable
     updated_by: id foreign:users.id nullable
     naziv: string
@@ -15,5 +25,4 @@ models:
     datum: date
     vreme_pocetka: time
     vreme_kraja: time
-    bulk_uid: string nullable
     status: enum:potvrdjen,odbijen,ceka default:ceka

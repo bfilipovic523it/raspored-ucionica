@@ -5,6 +5,7 @@ use App\Http\Controllers\RasporedController;
 use App\Http\Controllers\PrijavaController;
 use App\Http\Controllers\RasporedNastavnikaController;
 use App\Http\Controllers\RasporedUcioniceController;
+use App\Http\Controllers\RasporediController;
 
 
 
@@ -31,6 +32,9 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {
+    Route::resource('rasporedi', RasporediController::class)
+        ->only(['index', 'destroy'])
+        ->parameters(['rasporedi' => 'raspored']);
 });
 
 Route::get('/login', [PrijavaController::class, 'forma'])->name('login');

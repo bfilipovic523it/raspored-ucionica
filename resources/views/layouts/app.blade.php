@@ -18,6 +18,10 @@
                     <a class="nav-link text-white" href="{{ route('raspored.ucionica') }}">Nedeljni raspored učionica</a>
                     <a class="nav-link text-white" href="{{ route('raspored.nastavnik') }}">Dnevni raspored nastavnika</a>
                     <a class="nav-link text-white" href="{{ route('raspored.nastavnik.nedelja') }}">Nedeljni raspored nastavnika</a>
+
+                    @if (auth()->user()->jeAdmin())
+                        <a class="nav-link text-white" href="{{ route('rasporedi.index') }}">Rasporedi</a>
+                    @endif
                 </div>
 
                 <div class="d-flex align-items-center gap-3">

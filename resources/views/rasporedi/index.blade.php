@@ -3,9 +3,10 @@
 @section('title', 'Rasporedi')
 
 @section('content')
-    <h2>Rasporedi</h2>
-    <p class="text-muted">Svi uvezeni rasporedi. Brisanjem rasporeda brišu se i svi termini koji su napravljeni tim uvozom.</p>
-
+    <div class="d-flex align-items-center justify-content-between">
+        <h2>Rasporedi</h2>
+        <a href="{{ route('rasporedi.create') }}" class="btn btn-primary">Novi uvoz</a>
+    </div>
     @if (session('poruka'))
         <div class="alert alert-success">{{ session('poruka') }}</div>
     @endif

@@ -7,6 +7,18 @@
 
     <div class="card" style="max-width: 640px;">
         <div class="card-body">
+            @if (session('greske_uvoza'))
+                <div class="alert alert-danger">
+                    <strong>Raspored nije uvezen.</strong> U fajlovima je pronađeno grešaka: {{ count(session('greske_uvoza')) }}.
+                    Ispravite ih i ponovo izaberite fajlove.
+                    <ul class="mb-0 mt-2" style="max-height: 300px; overflow-y: auto;">
+                        @foreach (session('greske_uvoza') as $greska)
+                            <li>{{ $greska }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             @if ($errors->any())
                 <div class="alert alert-danger">
                     <ul class="mb-0">

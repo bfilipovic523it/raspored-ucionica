@@ -11,6 +11,17 @@
         <div class="alert alert-success">{{ session('poruka') }}</div>
     @endif
 
+    @if (session('upozorenja'))
+        <div class="alert alert-warning">
+            <strong>Upozorenje:</strong> broj uvezenih termina koji se preklapaju sa već postojećim terminima: {{ count(session('upozorenja')) }}.
+            <ul class="mb-0 mt-2" style="max-height: 300px; overflow-y: auto;">
+                @foreach (session('upozorenja') as $upozorenje)
+                    <li>{{ $upozorenje }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     @if ($rasporedi->isEmpty())
         <div class="alert alert-info">Još nema uvezenih rasporeda.</div>
     @else

@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Raspored;
+use App\Models\Termin;
 use App\Models\Ucionica;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class UvozRasporedaNastave
 {
@@ -24,6 +27,51 @@ class UvozRasporedaNastave
             'termini' => $this->greske ? [] : $termini,
             'greske' => $this->greske,
         ];
+    }
+
+    public function upisi(Raspored $raspored, array $termini, int $adminId): void
+    {
+        $sada = now();
+
+        foreach (array_chunk($termini, 500) as $grupa) {
+            Termin::insert(array_map(fn ($termin) => $termin + [
+                'raspored_id' => $raspored->id,
+                'created_by' => $adminId,
+                'status' => 'potvrdjen',
+                'created_at' => $sada,
+                'updated_at' => $sada,
+            ], $grupa));
+        }
+    }
+
+    public function preklapanja(Raspored $raspored): array
+    {
+        return DB::table('termins as novi')
+            ->join('termins as postojeci', function ($spoj) {
+                $spoj->on('postojeci.ucionica_id', '=', 'novi.ucionica_id')
+                    ->on('postojeci.datum', '=', 'novi.datum')
+                    ->on('postojeci.vreme_pocetka', '<', 'novi.vreme_kraja')
+                    ->on('postojeci.vreme_kraja', '>', 'novi.vreme_pocetka');
+            })
+            ->join('ucionicas', 'ucionicas.id', '=', 'novi.ucionica_id')
+            ->where('novi.raspored_id', $raspored->id)
+            ->where(function ($q) use ($raspored) {
+                $q->whereNull('postojeci.raspored_id')
+                    ->orWhere('postojeci.raspored_id', '!=', $raspored->id);
+            })
+            ->whereIn('postojeci.status', ['ceka', 'potvrdjen'])
+            ->orderBy('novi.datum')
+            ->orderBy('novi.vreme_pocetka')
+            ->get([
+                'novi.naziv as novi_naziv', 'novi.datum', 'novi.vreme_pocetka', 'novi.vreme_kraja',
+                'ucionicas.naziv as ucionica', 'postojeci.naziv as postojeci_naziv',
+                'postojeci.vreme_pocetka as postojeci_pocetak', 'postojeci.vreme_kraja as postojeci_kraj',
+            ])
+            ->map(fn ($p) => date('d.m.Y.', strtotime($p->datum)) . ' ' . $p->ucionica . ' '
+                . substr($p->vreme_pocetka, 0, 5) . '–' . substr($p->vreme_kraja, 0, 5) . ': „' . $p->novi_naziv
+                . '“ se preklapa sa „' . $p->postojeci_naziv . '“ ('
+                . substr($p->postojeci_pocetak, 0, 5) . '–' . substr($p->postojeci_kraj, 0, 5) . ')')
+            ->all();
     }
 
     private function procitajDane(string $putanja): array

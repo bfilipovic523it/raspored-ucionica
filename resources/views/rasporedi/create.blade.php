@@ -39,27 +39,13 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label d-block">Vrsta rasporeda</label>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="tip" id="tip-nastava" value="nastava"
-                               @checked(old('tip', 'nastava') === 'nastava')>
-                        <label class="form-check-label" for="tip-nastava">Raspored nastave (semestralni)</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="tip" id="tip-testiranje" value="testiranje"
-                               @checked(old('tip') === 'testiranje')>
-                        <label class="form-check-label" for="tip-testiranje">Raspored testiranja (ispiti, kolokvijumi)</label>
-                    </div>
-                </div>
-
-                <div class="mb-3">
                     <label class="form-label" for="fajl_raspored">Raspored (CSV)</label>
                     <input type="file" id="fajl_raspored" name="fajl_raspored" class="form-control" accept=".csv" required>
                 </div>
 
-                <div class="mb-3" id="polje-dani">
+                <div class="mb-3">
                     <label class="form-label" for="fajl_dani">Datumi po danima (CSV)</label>
-                    <input type="file" id="fajl_dani" name="fajl_dani" class="form-control" accept=".csv">
+                    <input type="file" id="fajl_dani" name="fajl_dani" class="form-control" accept=".csv" required>
                 </div>
 
                 <div class="d-flex gap-2">
@@ -70,19 +56,3 @@
         </div>
     </div>
 @endsection
-
-@push('scripts')
-    <script>
-        function osveziPoljeDani() {
-            const nastava = document.getElementById('tip-nastava').checked;
-            document.getElementById('polje-dani').classList.toggle('d-none', !nastava);
-            document.getElementById('fajl_dani').required = nastava;
-        }
-
-        document.querySelectorAll('input[name="tip"]').forEach(function (radio) {
-            radio.addEventListener('change', osveziPoljeDani);
-        });
-
-        osveziPoljeDani();
-    </script>
-@endpush

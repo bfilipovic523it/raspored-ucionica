@@ -30,43 +30,38 @@ class RasporediController extends Controller
     {
         $podaci = $request->validate([
             'naziv' => ['required', 'string', 'max:255'],
-            'tip' => ['required', 'in:nastava,testiranje'],
             'fajl_raspored' => ['required', 'file', 'extensions:csv', 'max:2048'],
-            'fajl_dani' => ['required_if:tip,nastava', 'nullable', 'file', 'extensions:csv', 'max:2048'],
+            'fajl_dani' => ['required', 'file', 'extensions:csv', 'max:2048'],
         ], [
             'naziv.required' => 'Upišite naziv rasporeda.',
             'fajl_raspored.required' => 'Izaberite CSV fajl sa rasporedom.',
             'fajl_raspored.extensions' => 'Fajl sa rasporedom mora biti CSV.',
-            'fajl_dani.required_if' => 'Za raspored nastave izaberite i fajl sa datumima po danima.',
+            'fajl_dani.required' => 'Izaberite i fajl sa datumima po danima.',
             'fajl_dani.extensions' => 'Fajl sa datumima mora biti CSV.',
             '*.max' => 'Fajl je prevelik (najviše 2 MB).',
         ]);
 
-        $termini = [];
+        $priprema = $uvoz->pripremi(
+            $request->file('fajl_raspored')->getRealPath(),
+            $request->file('fajl_dani')->getRealPath(),
+        );
 
-        if ($podaci['tip'] === 'nastava') {
-            $priprema = $uvoz->pripremi(
-                $request->file('fajl_raspored')->getRealPath(),
-                $request->file('fajl_dani')->getRealPath(),
-            );
-
-            if ($priprema['greske']) {
-                return back()->withInput()->with('greske_uvoza', $priprema['greske']);
-            }
-
-            $termini = $priprema['termini'];
+        if ($priprema['greske']) {
+            return back()->withInput()->with('greske_uvoza', $priprema['greske']);
         }
+
+        $termini = $priprema['termini'];
 
         $putanje = [
             'fajl_raspored' => $request->file('fajl_raspored')->store('rasporedi'),
-            'fajl_dani' => $podaci['tip'] === 'nastava' ? $request->file('fajl_dani')->store('rasporedi') : null,
+            'fajl_dani' => $request->file('fajl_dani')->store('rasporedi'),
         ];
 
         try {
             $raspored = DB::transaction(function () use ($podaci, $putanje, $termini, $uvoz, $request) {
                 $raspored = Raspored::create([
                     'naziv' => $podaci['naziv'],
-                    'tip' => $podaci['tip'],
+                    'tip' => 'nastava',
                     'user_id' => $request->user()->id,
                     ...$putanje,
                 ]);
@@ -80,12 +75,8 @@ class RasporediController extends Controller
             throw $e;
         }
 
-        $poruka = $podaci['tip'] === 'nastava'
-            ? 'Raspored „' . $raspored->naziv . '" je uvezen: ' . count($termini) . ' termina.'
-            : 'Raspored „' . $raspored->naziv . '" je sačuvan. Uvoz rasporeda testiranja još nije podržan, pa termini nisu napravljeni.';
-
         return redirect()->route('rasporedi.index')
-            ->with('poruka', $poruka)
+            ->with('poruka', 'Raspored „' . $raspored->naziv . '" je uvezen: ' . count($termini) . ' termina.')
             ->with('upozorenja', $uvoz->preklapanja($raspored));
     }
 

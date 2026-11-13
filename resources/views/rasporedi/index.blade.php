@@ -30,7 +30,6 @@
                 <tr>
                     <th>#</th>
                     <th>Naziv</th>
-                    <th>Tip</th>
                     <th>Uvezao</th>
                     <th>Datum uvoza</th>
                     <th class="text-end">Termina</th>
@@ -42,7 +41,6 @@
                     <tr>
                         <td>{{ $raspored->id }}</td>
                         <td>{{ $raspored->naziv }}</td>
-                        <td>{{ $raspored->tip === 'nastava' ? 'Raspored nastave' : 'Raspored testiranja' }}</td>
                         <td>{{ $raspored->user->name }}</td>
                         <td>{{ $raspored->created_at->format('d.m.Y. H:i') }}</td>
                         <td class="text-end">{{ $raspored->termini_count }}</td>
